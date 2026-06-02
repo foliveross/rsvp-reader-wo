@@ -18,16 +18,24 @@
 - **Fix**: Set `DEFAULT_JVM_OPTS=''` (empty) and let gradle.properties handle it
 - **Result**: ✅ Resolved
 
-### Issue #3: Missing gradle-wrapper.jar ❌ → ✅
-**Commit**: `1e6ef7f`
-- **Problem**: `ClassNotFoundException: org.gradle.wrapper.GradleWrapperMain`
-- **Cause**: The binary `gradle-wrapper.jar` file was missing from `gradle/wrapper/` directory
-- **Fix**: 
-  1. Downloaded Gradle 8.2 distribution (gradle-8.2-bin.zip)
-  2. Extracted `gradle-wrapper-8.2.jar` from distribution
-  3. Placed it as `gradle-wrapper.jar` in `gradle/wrapper/`
-  4. Committed the binary file to Git
-- **Result**: ✅ Resolved
+### Issue #3: Missing gradle-wrapper.jar ❌ → ❌ → ✅
+**Commits**: `1e6ef7f` (incorrect), `a5f8b66` (fixed)
+- **First Attempt Problem**: `ClassNotFoundException: org.gradle.wrapper.GradleWrapperMain`
+  - Downloaded Gradle 8.2 distribution and extracted jar from lib/plugins/ - WRONG JAR
+  - Result: New error `NoClassDefFoundError: org/gradle/wrapper/IDownload`
+  
+- **Root Cause**: Copied the wrong jar file (plugin jar, not wrapper jar)
+  - `lib/plugins/gradle-wrapper-8.2.jar` ≠ Official `gradle-wrapper.jar`
+  - The wrapper jar is missing critical classes needed for bootstrap
+
+- **Final Fix**: 
+  1. Downloaded official `gradle-wrapper.jar` from GitHub (gradle/gradle repo)
+  2. This jar contains all required Gradle wrapper classes (IDownload, etc.)
+  3. File size: 47.33 KB (official version)
+  4. Replaced the incorrect jar in `gradle/wrapper/`
+  5. Committed and pushed to GitHub
+
+- **Result**: ✅ Resolved (Correct jar now in place)
 
 ---
 
@@ -63,7 +71,8 @@ gradlew.bat
 | 1 | `ba1ce77` | Fix: Remove deprecated MaxPermSize | ✅ |
 | 2 | `d8e95b3` | Fix: Remove incorrect JVM args from wrapper scripts | ✅ |
 | 3 | `3e88880` | Add comprehensive build fix report | ✅ |
-| 4 | `1e6ef7f` | Add gradle-wrapper.jar binary | ✅ |
+| 4 | `1e6ef7f` | Add gradle-wrapper.jar binary (incorrect version) | ⚠️ |
+| 5 | `a5f8b66` | Fix: Replace with official gradle-wrapper.jar from GitHub | ✅ |
 
 **All commits pushed to GitHub** ✅
 
@@ -92,6 +101,19 @@ GitHub Actions: ./gradlew build
 JVM: Cannot find gradle-wrapper.jar
 Result: Cannot execute wrapper, ClassNotFoundException
 ```
+
+### Error 4: Wrong gradle-wrapper.jar (First Fix Attempt)
+```
+GitHub Actions: ./gradlew build
+JVM: Loads gradle-wrapper.jar from lib/plugins/
+Missing: org/gradle/wrapper/IDownload class
+Result: NoClassDefFoundError
+```
+
+**Solution**: Download official gradle-wrapper.jar from GitHub (gradle/gradle repo)
+- The jar must contain all Gradle wrapper bootstrap classes
+- lib/plugins/gradle-wrapper-8.2.jar is NOT the wrapper jar
+- Official jar size: 47.33 KB
 
 ---
 
@@ -165,7 +187,7 @@ gradlew build
 |-------|-------|----------|--------|
 | Build Config | Deprecated MaxPermSize | Removed from gradle.properties | ba1ce77 |
 | Wrapper Script | Malformed JVM args | Cleared DEFAULT_JVM_OPTS | d8e95b3 |
-| Binary Files | Missing wrapper jar | Downloaded and committed | 1e6ef7f |
+| Binary Files | Missing IDownload class in wrapper jar | Downloaded official gradle-wrapper.jar from GitHub | a5f8b66 |
 
 ---
 

@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Android
+.gradle/
+.idea/
+*.iml
+*.apk
+*.ap_
+*.dex
+*.class
+.classpath
+.project
+.properties
+local.properties
+build/
+bin/
+gen/
+
+# VS Code
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+.~*
+
+# Gradle
+.gradle
+**/build/
+
+# Android Studio
+.idea
+*.iml
+*.iws
+*.ipr
+
+# OS-specific files
+Thumbs.db
+
+# Project specific
+captures/
+.externalNativeBuild
+.cxx

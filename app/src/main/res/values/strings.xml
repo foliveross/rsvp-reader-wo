@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RSVP Reader</string>
+    <string name="load_book">Load Book</string>
+    <string name="start_reading">Start Reading</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="speed">Speed: %d WPM</string>
+    <string name="book_loaded">Book Loaded</string>
+    <string name="no_book">No book loaded</string>
+    <string name="error_loading">Error loading file</string>
+    <string name="swipe_to_control">Swipe to control reading</string>
+    <string name="tap_to_pause">Tap to pause/resume</string>
+</resources>

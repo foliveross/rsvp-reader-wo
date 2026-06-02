@@ -26,6 +26,13 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Extract version from build.gradle.kts
+        id: version
+        run: |
+          VERSION=$(grep "versionName = " app/build.gradle.kts | sed 's/.*versionName = "\(.*\)".*/\1/')
+          echo "app_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=v$VERSION-build.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
       - name: Build with Gradle
         run: ./gradlew build
 
@@ -36,27 +43,77 @@ jobs:
         run: ./gradlew assembleRelease
         continue-on-error: true
 
-      - name: Upload Debug APK
+      - name: Upload Debug APK as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
 
-      - name: Upload Release APK
+      - name: Upload Release APK as Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: app-release
+          name: app-release-apk
           path: app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
         continue-on-error: true
 
-      - name: Create Release on Tag
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Git Tag (main branch only)
+        if: github.ref == 'refs/heads/main' && success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a ${{ steps.version.outputs.tag_name }} -m "Automated release: RSVP Reader v${{ steps.version.outputs.app_version }}"
+          git push origin ${{ steps.version.outputs.tag_name }}
+
+      - name: Create Release (main branch only)
+        if: github.ref == 'refs/heads/main' && success()
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: RSVP Reader v${{ steps.version.outputs.app_version }} (Build #${{ github.run_number }})
+          body: |
+            ## RSVP Reader for Wear OS v${{ steps.version.outputs.app_version }}
+            
+            ### Build Information
+            - **Build Number**: ${{ github.run_number }}
+            - **Commit**: ${{ github.sha }}
+            - **Branch**: main
+            - **Platform**: Android Wear OS (Min SDK 30)
+            
+            ### Files Included
+            - `app-debug.apk` - Debug build for testing and development
+            - `app-release.apk` - Release build optimized for distribution
+            
+            ### Installation Instructions
+            
+            #### Using adb (Android Debug Bridge)
+            ```bash
+            adb install -r app-debug.apk    # For debug build
+            adb install -r app-release.apk  # For release build
+            ```
+            
+            #### Features
+            - Rapid Serial Visual Presentation (RSVP) reading technology
+            - TXT file loading support
+            - Gesture controls (swipe navigation)
+            - Customizable reading speed (50-1000 WPM)
+            - Progress tracking
+            - Persistent preferences
+            
+            #### Requirements
+            - Android Wear OS 9.0 or later (SDK 30+)
+            - Compatible smartwatch device
+            
+            ### Documentation
+            - See README.md for detailed documentation
+            - See QUICK_START.md for quick setup guide
+          files: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
